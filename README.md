@@ -35,9 +35,9 @@ To get started with the PublishEveryDay Backend, follow these steps:
 
 1. Clone this repository:
 git clone https://github.com/M-p-MU/PublishEveryDay_Backend.git
-cd PublishEveryDay_Backend
+2. then navigate to the folder: cd PublishEveryDay_Backend
 
-2. Install the dependencies:
+3. Install the dependencies:
  npm install
 
 ### Usage
