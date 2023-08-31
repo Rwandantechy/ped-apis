@@ -44,9 +44,9 @@ git clone https://github.com/M-p-MU/PublishEveryDay_Backend.git
 
 1. Configure environment variables:
 Create a `.env` file in the root directory with the following variables:
-  1. PORT=3000
-  2. MONGODB_URI=your_mongodb_uri
-  3. JWT_SECRET=your_jwt_secret
+    1. PORT=3000
+    2. MONGODB_URI=your_mongodb_uri
+    3. JWT_SECRET=your_jwt_secret
 
 2. Start the server:
 npm start
