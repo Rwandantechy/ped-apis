@@ -1,0 +1,42 @@
+{
+  "name": "major_project_1_backend",
+  "version": "1.0.0",
+  "description": "Empowering bloggers and content creators with Project PublishEveryDay's backend. Seamlessly facilitate content creation, scheduling, and engagement functionalities. Harness the power of Node.js, Express.js, and MongoDB in the MERN Stack to revolutionize content sharing and engagement. Join us in reshaping the digital landscape.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "PublishEveryDay_Backend"
+  },
+  "keywords": [
+    "Blogging",
+    "platform",
+    "Backend",
+    "development",
+    "Content",
+    "creation",
+    "Node.js",
+    "Express.js",
+    "MongoDB",
+    "MERN",
+    "Stack",
+    "Content",
+    "scheduling",
+    "User",
+    "engagement",
+    "Empowerment",
+    "Bloggers",
+    "Content",
+    "creators",
+    "Coding",
+    "journey",
+    "Web",
+    "application",
+    "Technology",
+    "innovation"
+  ],
+  "author": "Rwandantechy_____Innocent Niyonzima.",
+  "license": "ISC"
+}
