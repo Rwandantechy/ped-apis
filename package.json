@@ -2,8 +2,10 @@
   "name": "major_project_1_backend",
   "version": "1.0.0",
   "description": "Empowering bloggers and content creators with Project PublishEveryDay's backend. Seamlessly facilitate content creation, scheduling, and engagement functionalities. Harness the power of Node.js, Express.js, and MongoDB in the MERN Stack to revolutionize content sharing and engagement. Join us in reshaping the digital landscape.",
-  "main": "index.js",
+  "main": "server.js",
+  "type": "module",
   "scripts": {
+    "start": "nodemon --experimental-modules --es-module-specifier-resolution=node --no-warnings server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -38,5 +40,14 @@
     "innovation"
   ],
   "author": "Rwandantechy_____Innocent Niyonzima.",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^7.5.0",
+    "morgan": "^1.10.0",
+    "nodemon": "^3.0.1",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.0"
+  }
 }
