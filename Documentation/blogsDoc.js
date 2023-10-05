@@ -1,11 +1,9 @@
 /**
  * @swagger
  * tags:
- *   name: general term blog post but can be any content type.
- *   description: Creates a new blog with the provided data fields .
- *
+ *   name:  Blogs
+ *   description: Blog Restful APIs with operations that can be performed.
  */
-
 /**
  * @swagger
  * /blogs:
@@ -301,4 +299,263 @@
  *                         image:
  *                           type: string
  *                           description: Blog image file.
+ */
+/**
+ * @swagger
+ * /blogs/paginated:
+ *   get:
+ *     summary: Get all blogs with pagination
+ *     description: Retrieve all blogs with pagination.
+ *     tags: [Blogs]
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *         required: false
+ *         description: The page number for pagination. Default is 1.
+ *     responses:
+ *       200:
+ *         description: Blogs retrieved successfully with pagination.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 metadata:
+ *                   type: object
+ *                   properties:
+ *                     count:
+ *                       type: integer
+ *                       description: The number of blogs on the current page.
+ *                     message:
+ *                       type: string
+ *                       description: A success message.
+ *                     page:
+ *                       type: integer
+ *                       description: The current page number.
+ *                 blogs:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Blog'
+ *                 request:
+ *                   type: object
+ *                   properties:
+ *                     type:
+ *                       type: string
+ *                       description: The HTTP request type.
+ *                     description:
+ *                       type: string
+ *                       description: A description of the request.
+ *                     url:
+ *                       type: string
+ *                       description: The URL for the next page of blogs.
+ *       500:
+ *         description: Internal Server Error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+/**
+ * @swagger
+ * /top-blogs:
+ *   get:
+ *     summary: Get the Top 10 Blogs with Most Likes and Comments
+ *     description: Retrieve the top 10 blogs with the highest number of likes and comments.
+ *     tags: [Blogs]
+ *     responses:
+ *       200:
+ *         description: Top 10 blogs with most likes and comments retrieved successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 metadata:
+ *                   type: object
+ *                   properties:
+ *                     count:
+ *                       type: integer
+ *                       description: The number of top blogs retrieved.
+ *                     message:
+ *                       type: string
+ *                       description: A success message.
+ *                 topBlogs:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Blog'
+ *       500:
+ *         description: Internal Server Error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+
+/**
+ * @swagger
+ * /blogs/paginated:
+ *   get:
+ *     summary: Get all blogs with pagination
+ *     description: Retrieve all blogs with pagination.
+ *     tags: [Blogs]
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *         required: false
+ *         description: The page number for pagination. Default is 1.
+ *     responses:
+ *       200:
+ *         description: Blogs retrieved successfully with pagination.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 metadata:
+ *                   type: object
+ *                   properties:
+ *                     count:
+ *                       type: integer
+ *                       description: The number of blogs on the current page.
+ *                     message:
+ *                       type: string
+ *                       description: A success message.
+ *                     page:
+ *                       type: integer
+ *                       description: The current page number.
+ *                 blogs:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Blog'
+ *                 request:
+ *                   type: object
+ *                   properties:
+ *                     type:
+ *                       type: string
+ *                       description: The HTTP request type.
+ *                     description:
+ *                       type: string
+ *                       description: A description of the request.
+ *                     url:
+ *                       type: string
+ *                       description: The URL for the next page of blogs.
+ *       500:
+ *         description: Internal Server Error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+
+/**
+ * @swagger
+ * /top-blogs:
+ *   get:
+ *     summary: Get the Top 10 Blogs with Most Likes and Comments
+ *     description: Retrieve the top 10 blogs with the highest number of likes and comments.
+ *     tags: [Blogs]
+ *     responses:
+ *       200:
+ *         description: Top 10 blogs with most likes and comments retrieved successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 metadata:
+ *                   type: object
+ *                   properties:
+ *                     count:
+ *                       type: integer
+ *                       description: The number of top blogs retrieved.
+ *                     message:
+ *                       type: string
+ *                       description: A success message.
+ *                 topBlogs:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Blog'
+ *       500:
+ *         description: Internal Server Error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+/**
+ * @swagger
+ * /blogs/by-owner/{userId}:
+ *   get:
+ *     summary: Get blogs by owner or admin with optional pagination.
+ *     description: Retrieves blogs owned by a specific user or admin with optional pagination.
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         description: The unique identifier of the owner or admin whose blogs are to be retrieved.
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *         required: false
+ *         description: The page number for pagination. Default is 1.
+ *     tags: [Blogs]
+ *     responses:
+ *       200:
+ *         description: Blogs retrieved successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 metadata:
+ *                   type: object
+ *                   properties:
+ *                     count:
+ *                       type: integer
+ *                       description: The number of blogs on the current page.
+ *                     message:
+ *                       type: string
+ *                       description: A success message.
+ *                     page:
+ *                       type: integer
+ *                       description: The current page number.
+ *                 userBlogs:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Blog'
+ *                 request:
+ *                   type: object
+ *                   properties:
+ *                     type:
+ *                       type: string
+ *                       description: The HTTP request type.
+ *                     description:
+ *                       type: string
+ *                       description: A description of the request.
+ *                     url:
+ *                       type: string
+ *                       description: The URL for the next page of blogs.
+ *       404:
+ *         description: No blogs found for this owner.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   description: An error message indicating no blogs found for this owner.
+ *       500:
+ *         description: Internal Server Error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */

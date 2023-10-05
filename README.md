@@ -1,5 +1,7 @@
 # PublishEveryDay Backend
-Welcome to the PublishEveryDay Backend repository! This repository contains the backend code for the PublishEveryDay Blogging Platform, a web application aimed at empowering bloggers and content creators.
+Welcome to the PublishEveryDay Backend repository!
+ This repository contains the backend code for the PublishEveryDay Blogging Platform,
+ a web application aimed at empowering bloggers and content creators.
 
 ## Table of Contents
 

@@ -1,1 +1,0 @@
-import { getCollection } from './database.js';

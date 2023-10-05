@@ -7,6 +7,9 @@ const collections = {
   comments: "comments",
   messages: "messages",
   users: "users",
+  replies: "replies",
+  reportedblogs: "reportedblogs",
+  admins: "admins",
 };
 
 const client = new MongoClient( config.mongodbURI, {

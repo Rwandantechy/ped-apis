@@ -1,9 +1,8 @@
 import { getCollection } from "../database.js";
 import { ObjectId } from "mongodb";
 import fs from "fs";
-import path from "path";
 
-// Create a new blog or any content type.
+//__________ Create a new blog ___________/
 export const createBlog = async (req, res) => {
   try {
     const blogsCollection = getCollection("blogs");
@@ -12,7 +11,6 @@ export const createBlog = async (req, res) => {
     if (file) {
       console.log("Uploaded file:", file);
       blogData.image = file.path;
-
     }
 
     const result = await blogsCollection.insertOne(blogData);
@@ -39,7 +37,7 @@ export const createBlog = async (req, res) => {
   }
 };
 
-// Get all blogs/any content type.
+//__________ Get all blogs/any content type___________/
 export const getAllBlogs = async (req, res) => {
   try {
     const blogsCollection = getCollection("blogs");
@@ -63,7 +61,7 @@ export const getAllBlogs = async (req, res) => {
   }
 };
 
-// Get a single blog by ID
+//_________ Get a single blog by ID___________/
 export const getBlogById = async (req, res) => {
   try {
     const id = `${req.params.id}`;
@@ -100,11 +98,11 @@ export const getBlogById = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
-// Update an existing blog
+//____________ Update an existing blog_____________/
 export const updateBlog = async (req, res) => {
   const id = `${req.params.id}`;
   const blogUpdatedData = {};
-  const file = req.file; 
+  const file = req.file;
   try {
     const blogsCollection = getCollection("blogs");
 
@@ -118,13 +116,13 @@ export const updateBlog = async (req, res) => {
       return res.status(400).json({ error: "Invalid update data" });
     }
 
-    if (file) {      
+    if (file) {
       const uploadDir = "./blogImages/";
       const originalName = file.originalname;
       const timestamp = Date.now();
       const filename = `${timestamp}_${originalName}`;
 
-       const filePath = uploadDir + filename;      
+      const filePath = uploadDir + filename;
       fs.renameSync(file.path, filePath);
       blogUpdatedData.image = filePath;
     }
@@ -165,7 +163,7 @@ export const updateBlog = async (req, res) => {
   }
 };
 
-// Delete a blog by ID
+//______________ Delete a blog by ID_____________/
 export const deleteBlog = async (req, res) => {
   const id = `${req.params.id}`;
 
@@ -197,6 +195,137 @@ export const deleteBlog = async (req, res) => {
     });
   } catch (error) {
     console.error("Error deleting a blog:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+//__________ Get all blogs/any content type with pagination___________/
+export const getAllBlogsPaginated = async (req, res) => {
+  try {
+    const blogsCollection = getCollection("blogs");
+    const page = parseInt(req.query.page) || 1;
+
+    const skip = (page - 1) * blogsPerPage;
+
+    const blogs = await blogsCollection
+      .find({})
+      .skip(skip)
+      .limit(blogsPerPage)
+      .toArray();
+
+    res.status(200).json({
+      metadata: {
+        count: blogs.length,
+        message: "List of all created blogs retrieved successfully.",
+        page: page,
+      },
+      blogs: blogs,
+      request: {
+        type: "GET",
+        description: "Get all blogs with pagination",
+        url: `/api/v1/ped/blogs/paginated?page=${page + 1}`,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching blogs:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+//__________Get the top 10 blogs with most likes and comments___________/
+export const getTopBlogs = async (req, res) => {
+  try {
+    const blogsCollection = getCollection("blogs");
+
+    // Sort top 10 blogs by likes and comments
+    const topBlogs = await blogsCollection
+      .find({})
+      .sort({ likesCount: -1, commentsCount: -1 })
+      .limit(10)
+      .toArray();
+
+    res.status(200).json({
+      metadata: {
+        count: topBlogs.length,
+        message:
+          "Top 10 blogs with most likes and comments retrieved successfully.",
+      },
+      topBlogs: topBlogs,
+    });
+  } catch (error) {
+    console.error("Error fetching top blogs:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+//_______Get blogs by owner or admin with optional pagination_______/
+export const getBlogsByOwner = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+
+    const blogsCollection = getCollection("blogs");
+
+    // check if the user  is an admin(privilleged user)
+    async function checkAdminById(userId) {
+      const adminsCollection = getCollection("admins");
+      const admin = await adminsCollection.findOne({ userId: userId });
+
+      return !!admin;
+    }
+
+    // Check if the user has any blogs
+    const userBlogsCount = await blogsCollection.countDocuments({
+      ownerId: userId,
+    });
+
+   
+    const isAdmin = await checkAdminById(userId);
+
+    if (userBlogsCount === 0 && !isAdmin) {
+      return res.status(404).json({ error: "No blogs found for this owner." });
+    }
+
+    // fewer than 10 blogs, return all
+    if (userBlogsCount <= 10 || isAdmin) {
+      const userBlogs = await blogsCollection
+        .find({ ownerId: userId })
+        .toArray();
+
+      res.status(200).json({
+        metadata: {
+          count: userBlogs.length,
+          message: "Blogs retrieved successfully for this owner.",
+        },
+        userBlogs: userBlogs,
+      });
+    } else {
+      //more than 10 blogs, paginate them
+      const page = parseInt(req.query.page) || 1;
+      const blogsPerPage = 10;
+      const skip = (page - 1) * blogsPerPage;
+
+      const userBlogs = await blogsCollection
+        .find({ ownerId: userId })
+        .skip(skip)
+        .limit(blogsPerPage)
+        .toArray();
+
+      res.status(200).json({
+        metadata: {
+          count: userBlogs.length,
+          message: "Blogs retrieved successfully for this owner.",
+          page: page,
+        },
+        userBlogs: userBlogs,
+        request: {
+          type: "GET",
+          description: "Get blogs by owner with pagination",
+          url: `/api/v1/ped/blogs/by-owner/${userId}?page=${page + 1}`,
+        },
+      });
+    }
+  } catch (error) {
+    console.error("Error fetching owner's blogs:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
