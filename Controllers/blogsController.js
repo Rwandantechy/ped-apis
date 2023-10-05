@@ -8,8 +8,7 @@ export const createBlog = async (req, res) => {
     const blogsCollection = getCollection("blogs");
     const blogData = req.body;
     const file = req.file;
-    if (file) {
-      console.log("Uploaded file:", file);
+    if (file) {      
       blogData.image = file.path;
     }
 
@@ -204,7 +203,7 @@ export const getAllBlogsPaginated = async (req, res) => {
   try {
     const blogsCollection = getCollection("blogs");
     const page = parseInt(req.query.page) || 1;
-
+    const blogsPerPage = 10;
     const skip = (page - 1) * blogsPerPage;
 
     const blogs = await blogsCollection
