@@ -8,6 +8,7 @@ const collections = {
   messages: "messages",
   users: "users",
   replies: "replies",
+  userVerifications: "userVerifications",
   reportedblogs: "reportedblogs",
   admins: "admins",
 };

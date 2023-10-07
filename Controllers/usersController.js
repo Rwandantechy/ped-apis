@@ -1,73 +1,175 @@
 import { getCollection } from "../database.js";
+import generateAuthToken from "../Middlewares/jwtAuth.js";
+import { hashInputData } from "../Middlewares/hashInputData.js";
+import { transporter } from "../Middlewares/nodemailerFunction.js";
 import { ObjectId } from "mongodb";
+import fs from "fs/promises";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
+import ejs from "ejs";
+import path from "path";
+import { dirname } from "path";
+import { fileURLToPath } from "url";
+import { v4 as uuidv4 } from "uuid";
 
-// Helper function to generate JWT tokens
-const generateAuthToken = (user) => {
-  const secretKey = process.env.JWT_SECRET;
-  return jwt.sign({ _id: user._id, email: user.email }, secretKey, {
-    JWT_EXPIRES_IN,
-  });
-};
-
-// Helper function to verify JWT tokens
-const verifyAuthToken = (token) => {
-  const jwtSecret = process.env.JWT_SECRET;
-
-  try {
-    return jwt.verify(token, jwtSecret);
-  } catch (error) {
-    return null;
-  }
-};
-
-// Helper function to hash passwords
-const hashPassword = async (password) => {
-  const saltRounds = 10;
-  return bcrypt.hash(password, saltRounds);
-};
-
-//________ Create a new user_______________________/
 export const createUser = async (req, res) => {
   try {
     const usersCollection = getCollection("users");
-    const userData = req.body;
+    const userVerificationsCollection = getCollection("userVerifications");
 
+    const userData = req.body;
     // Check if the email already exists
     const existingUser = await usersCollection.findOne({
       email: userData.email,
     });
 
     if (existingUser) {
-      return res.status(400).json({ error: "Email already exists." });
+      return res
+        .status(400)
+        .json({ error: "Email already exists. you can now login" });
     }
-    // Hash the password
-    userData.password = await hashPassword(userData.password);
 
-    // Insert the user into the database
+    // Hash the password using bcrypt
+    const hashedPassword = await hashInputData(req.body.password);
+
+    // add hashed password to the user data
+    userData.password = hashedPassword;
+    // Add 'emailVerified' as false
+    userData.emailVerified = false;
+
+    // Insert the user into the users collection
     const result = await usersCollection.insertOne(userData);
-
-    // Generate a JWT token for the new user
-    const token = generateAuthToken(result.ops[0]);
 
     // Create a user object with selected fields for response
     const createdUser = {
       _id: result.insertedId,
-      username: result.ops[0].username,
-      email: result.ops[0].email,
+      username: result.username,
+      email: result.email,
+      emailVerified: result.emailVerified,
     };
 
+    // Current URL
+    const currentUrl = "http://localhost:3000/";
+
+    // Generate a unique UUID token for email verification
+    const id = result.insertedId;
+    console.log(id);
+    const verificationToken = uuidv4() + id;
+
+    // Send the verification email with the EJS template
+    const verificationLink = `${currentUrl}api/verify/${id}/${verificationToken}`;
+
+    const __dirname = dirname(fileURLToPath(import.meta.url));
+    const emailTemplatePath = path.join(
+      __dirname,
+      "../Views/emailVerification.ejs"
+    );
+    const emailTemplateContent = await fs.readFile(emailTemplatePath, "utf8");
+
+    const emailContent = ejs.render(emailTemplateContent, { verificationLink });
+
+    await transporter.sendMail({
+      to: userData.email,
+      subject: "Email Verification",
+      html: emailContent,
+    });
+    // hash the token before storing it in the database
+    const hashedToken = await hashInputData(verificationToken);
+
+    // Create a record in the "userVerifications" collection
+    await userVerificationsCollection.insertOne({
+      userId: result.insertedId,
+      uniqueString: hashedToken,
+      createdAt: new Date(),
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+    });
+
+    // Respond with status for pending email verification
     res.status(201).json({
-      message: "User registered successfully.",
+      status: "Pending",
+      message: " Verification email sent.",
       user: createdUser,
-      token: token,
     });
   } catch (error) {
     console.error("Error making the registration:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+//______________________ verifying user through sent email______________________________/
+export const verifyUser = async (req, res) => {
+  try {
+    const sentUserId= req.params.sentUserId;
+    const verificationToken = req.params.token;
+    const userVerificationsCollection = getCollection("userVerifications");
+    const usersCollection = getCollection("users");
+  
+    // Look up the user verification record in the database with the user ID
+    const verificationRecord = await userVerificationsCollection.findOne({userId: new ObjectId(sentUserId)});
+  
+    console.log(" ID IS " +sentUserId);
+    console.log("record  is " + verificationRecord);
+    if (!verificationRecord) {
+      return res
+        .status(404)
+        .json({ error: "Email verified already or Error happened." });
+    }
+
+    // Check if the token has expired
+    const currentTime = new Date();
+    console.log(currentTime);
+    if (currentTime > verificationRecord.expiresAt) {
+      let message = "link has expired";
+      return res.redirect(`/api/verified/error=true&message=${message}`);
+    }
+
+    // Retrieve the hashed token from the database
+    const storedHashedToken = verificationRecord.uniqueString;
+
+    // Hash the received original token
+    const newlyHashedToken = await hashInputData(verificationToken);
+    // use bycrypt to compare the hashed token with the stored hashed token
+    const tokenNotChanged = bcrypt.compare(newlyHashedToken, storedHashedToken);
+    // Compare the freshly hashed token with the stored hashed token
+    if (tokenNotChanged === false) {
+      let message = "Invalid token";
+      return res.redirect(`/api/verified/error=true&message= ${message}`);
+      
+    }
+
+    // Mark the user's email as verified in the users collection
+    await usersCollection.updateOne(
+      { _id: verificationRecord.userId },
+      { $set: { emailVerified: true } }
+    );
+
+    // Remove the verification token record
+    await userVerificationsCollection.deleteOne({
+      _id: verificationRecord._id,
+    });
+    let message = "Email is verified successfully";
+     return res.redirect(`/api/verified/error=false&message= ${message}`);
+   
+  } catch (error) {
+    console.error("Error verifying email:", error);
+    let message = "Internal Server Error";    
+    return res.redirect(`/api/verified/error=true&message=${message}`);
+  }
+};
+
+
+export async function userEmailVerified(req, res) {
+  try {
+    const __dirname = dirname(fileURLToPath(import.meta.url));
+    const emailTemplatePath = path.join(
+      __dirname,
+      "../Views/confirmVerification.html"
+    );
+  
+    res.sendFile(emailTemplatePath)
+  } catch (error) {
+    console.error("Error giving the feedback after  clicking verification link:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+}
 
 //_______________ Login as a user_______________/
 export const loginUser = async (req, res) => {
@@ -192,7 +294,7 @@ export const searchUsersWithBlogs = async (req, res) => {
           user: {
             _id: user._id,
             username: user.username,
-            },
+          },
           blogs: userBlogs,
         };
       })
@@ -270,7 +372,6 @@ export const deleteUserById = async (req, res) => {
     console.error("Error deleting a user:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
-
 };
 
 // ________________Follow a user (blogger)______________/
@@ -278,7 +379,7 @@ export const followUser = async (req, res) => {
   try {
     // The user performing the follow
     const currentUserId = req.params.userId;
-    // The blogger to be followed 
+    // The blogger to be followed
     const followedUserId = req.body.followedUserId;
 
     const usersCollection = getCollection("users");
@@ -291,7 +392,7 @@ export const followUser = async (req, res) => {
         $push: {
           followers: {
             userId: currentUserId,
-            username: req.user.username, 
+            username: req.user.username,
             email: req.user.email,
           },
         },
@@ -313,13 +414,11 @@ export const followUser = async (req, res) => {
   }
 };
 
-
-
 //________________ Unfollow a user (blogger)______________/
 export const unfollowUser = async (req, res) => {
   try {
-    const currentUserId = req.params.userId; 
-    const unfollowedUserId = req.body.unfollowedUserId; 
+    const currentUserId = req.params.userId;
+    const unfollowedUserId = req.body.unfollowedUserId;
 
     const usersCollection = getCollection("users");
 
@@ -359,7 +458,7 @@ export const reportContent = async (req, res) => {
     const reportData = {
       blogId,
       bloggerId,
-      reporterId: req.user._id, 
+      reporterId: req.user._id,
       reporterName: req.user.username,
       reporterEmail: req.user.email,
       reason,
@@ -370,7 +469,7 @@ export const reportContent = async (req, res) => {
     // Return a success response
     res.status(201).json({
       message: "Content reported successfully.",
-      repotedBlog:result,
+      repotedBlog: result,
     });
   } catch (error) {
     console.error("Error reporting content:", error);

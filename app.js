@@ -3,6 +3,7 @@ import swaggerJSDoc from "swagger-jsdoc";
 import morgan from "morgan";
 import swaggerUI from "swagger-ui-express";
 import blogsRoutes from "./Routes/blogsRoutes.js";
+import usersRoutes from "./Routes/usersRoutes.js";
 import swaggerOptions from "./Documentation/swagger.js";
 import { connectDatabase } from "./database.js";
 import getCollection from "./database.js"; 
@@ -18,7 +19,7 @@ app.use((req, res, next) => {
   req.blogsCollection = getCollection("blogs");
   next();
 });
-
+app.use(express.json());
 app.use((req, res, next) => {
   req.commentsCollection = getCollection("comments");
   next();
@@ -44,6 +45,7 @@ app.use(
 
 // Route setup
 app.use("/api/v1/ped", blogsRoutes);
+app.use("/api", usersRoutes);
 
 // Default route
 app.use((req, res, next) => {
