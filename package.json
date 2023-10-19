@@ -4,7 +4,7 @@
   "description": "Empowering bloggers and content creators with Project PublishEveryDay's backend. Seamlessly facilitate content creation, scheduling, and engagement functionalities. Harness the power of Node.js, Express.js, and MongoDB in the MERN Stack to revolutionize content sharing and engagement. Join us in reshaping the digital landscape.",
   "main": "server.js",
   "scripts": {
-    "start": "nodemon server.js",
+    "start": "node server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "babel src -d dist"
   },
