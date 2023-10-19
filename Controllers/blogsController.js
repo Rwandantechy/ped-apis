@@ -169,7 +169,7 @@ export const deleteBlog = async (req, res) => {
   try {
     const blogsCollection = getCollection("blogs");
     console.log(id);
-    const result = await req.blogsCollection.deleteOne({
+    const result = await blogsCollection.deleteOne({
       _id: new ObjectId(id),
     });
 
@@ -266,6 +266,7 @@ export const getBlogsByOwner = async (req, res) => {
 
     // check if the user  is an admin(privilleged user)
     async function checkAdminById(userId) {
+      
       const adminsCollection = getCollection("admins");
       const admin = await adminsCollection.findOne({ userId: userId });
 

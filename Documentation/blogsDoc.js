@@ -9,7 +9,7 @@
  * /blogs:
  *   post:
  *     summary: Create a new blog /article/product review or any other content.
- *     description: Create a new piece of content with an optional title, content, and an image. Missing fields won't result in failure.
+ *     description: Create a new piece of content with an optional title, content, and an image.
  *     tags: [Blogs]
  *     requestBody:
  *       content:

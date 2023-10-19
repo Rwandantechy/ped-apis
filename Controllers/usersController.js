@@ -1,5 +1,5 @@
 import { getCollection } from "../database.js";
-import generateAuthToken from "../Middlewares/jwtAuth.js";
+import { generateAuthToken, verifyAuthToken } from "../Middlewares/jwtAuth.js";
 import { hashInputData } from "../Middlewares/hashInputData.js";
 import { transporter } from "../Middlewares/nodemailerFunction.js";
 import { ObjectId } from "mongodb";
@@ -10,6 +10,9 @@ import path from "path";
 import { dirname } from "path";
 import { fileURLToPath } from "url";
 import { v4 as uuidv4 } from "uuid";
+import { get } from "http";
+
+//_________________ Get all users____________________/
 
 export const createUser = async (req, res) => {
   try {
@@ -56,7 +59,7 @@ export const createUser = async (req, res) => {
     const verificationToken = uuidv4() + id;
 
     // Send the verification email with the EJS template
-    const verificationLink = `${currentUrl}api/verify/${id}/${verificationToken}`;
+    const verificationLink = `${currentUrl}api/v1/ped/verify/${id}/${verificationToken}`;
 
     const __dirname = dirname(fileURLToPath(import.meta.url));
     const emailTemplatePath = path.join(
@@ -94,18 +97,21 @@ export const createUser = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 //______________________ verifying user through sent email______________________________/
 export const verifyUser = async (req, res) => {
   try {
-    const sentUserId= req.params.sentUserId;
+    const sentUserId = req.params.sentUserId;
     const verificationToken = req.params.token;
     const userVerificationsCollection = getCollection("userVerifications");
     const usersCollection = getCollection("users");
-  
+
     // Look up the user verification record in the database with the user ID
-    const verificationRecord = await userVerificationsCollection.findOne({userId: new ObjectId(sentUserId)});
-  
-    console.log(" ID IS " +sentUserId);
+    const verificationRecord = await userVerificationsCollection.findOne({
+      userId: new ObjectId(sentUserId),
+    });
+
+    console.log(" ID IS " + sentUserId);
     console.log("record  is " + verificationRecord);
     if (!verificationRecord) {
       return res
@@ -118,7 +124,7 @@ export const verifyUser = async (req, res) => {
     console.log(currentTime);
     if (currentTime > verificationRecord.expiresAt) {
       let message = "link has expired";
-      return res.redirect(`/api/verified/error=true&message=${message}`);
+      return res.redirect(`/api/v1/ped/verified/error=true&message=${message}`);
     }
 
     // Retrieve the hashed token from the database
@@ -132,7 +138,6 @@ export const verifyUser = async (req, res) => {
     if (tokenNotChanged === false) {
       let message = "Invalid token";
       return res.redirect(`/api/verified/error=true&message= ${message}`);
-      
     }
 
     // Mark the user's email as verified in the users collection
@@ -146,16 +151,15 @@ export const verifyUser = async (req, res) => {
       _id: verificationRecord._id,
     });
     let message = "Email is verified successfully";
-     return res.redirect(`/api/verified/error=false&message= ${message}`);
-   
+    return res.redirect(`/api/v1/ped/verified/error=false&message= ${message}`);
   } catch (error) {
     console.error("Error verifying email:", error);
-    let message = "Internal Server Error";    
-    return res.redirect(`/api/verified/error=true&message=${message}`);
+    let message = "Internal Server Error";
+    return res.redirect(`/api/v1/ped/verified/error=true&message=${message}`);
   }
 };
 
-
+//_____________confirm email verification____________________/
 export async function userEmailVerified(req, res) {
   try {
     const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -163,10 +167,13 @@ export async function userEmailVerified(req, res) {
       __dirname,
       "../Views/confirmVerification.html"
     );
-  
-    res.sendFile(emailTemplatePath)
+
+    res.sendFile(emailTemplatePath);
   } catch (error) {
-    console.error("Error giving the feedback after  clicking verification link:", error);
+    console.error(
+      "Error giving the feedback after  clicking verification link:",
+      error
+    );
     res.status(500).json({ error: "Internal Server Error" });
   }
 }
@@ -178,7 +185,7 @@ export const loginUser = async (req, res) => {
     const usersCollection = getCollection("users");
 
     // Find the user by email
-    const user = await usersCollection.findOne({ email });
+    const user = await usersCollection.findOne({ email: email });
 
     if (!user) {
       return res.status(401).json({ error: "Invalid credentials." });
@@ -208,9 +215,7 @@ export const loginUser = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
-
-//_____ Get user one's self profile using their own ID_______/
-
+// ___________________Get your own profile_______________________/
 export const getUserById = async (req, res) => {
   try {
     const userId = `${req.params.id}`;
@@ -220,19 +225,29 @@ export const getUserById = async (req, res) => {
       return res.status(400).json({ error: "Invalid ObjectId." });
     }
 
-    //  authenticating the user by verifying the JWT token
     const authToken = req.headers.authorization;
-    const decodedToken = verifyAuthToken(authToken);
 
-    if (!decodedToken) {
-      return res.status(401).json({ error: "Unauthorized. Invalid token." });
+    let token = null;
+
+    if (authToken && authToken.startsWith("Bearer ")) {
+      token = authToken.split(" ")[1];
     }
 
-    // Ensure that the user is requesting their own profile
-    if (decodedToken._id !== userId) {
-      return res
-        .status(403)
-        .json({ error: "Forbidden. You can only access your own profile." });
+    if (token) {
+      const decodedToken = verifyAuthToken(token);
+
+      if (!decodedToken) {
+        return res.status(401).json({ error: "Unauthorized. Invalid token." });
+      }
+
+      // Ensure that the user is requesting their own profile
+      if (decodedToken.input._id !== userId) {
+        console.log(decodedToken._id);
+        console.log(userId);
+        return res
+          .status(403)
+          .json({ error: "Forbidden. You can only access your own profile." });
+      }
     }
 
     // Fetch the user data from the database
@@ -254,9 +269,13 @@ export const getUserById = async (req, res) => {
         comments: user.comments,
         blogs: user.blogs,
       },
+
+      Description: "All blogs written by this user",
+      method: "get",
+      url: `http://localhost:3000/api/v1/ped/blogs/${userId}`,
     });
   } catch (error) {
-    console.error("Error fetching a user:", error);
+    console.error("Error occurred while fetching a user:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
@@ -268,12 +287,12 @@ export const searchUsersWithBlogs = async (req, res) => {
     const usersCollection = getCollection("users");
     const blogsCollection = getCollection("blogs");
 
-    // Use a MongoDB query to find users with matching usernames or emails
+    // Use a MongoDB query to find users with matching usernames or full names
     const searchResults = await usersCollection
       .find({
         $or: [
           { username: { $regex: query, $options: "i" } },
-          { email: { $regex: query, $options: "i" } },
+          { fullName: { $regex: query, $options: "i" } },
         ],
       })
       .toArray();
@@ -285,9 +304,9 @@ export const searchUsersWithBlogs = async (req, res) => {
     // Retrieve blogs for each user
     const usersWithBlogs = await Promise.all(
       searchResults.map(async (user) => {
-        // Find blogs associated with the user based on bloggerName
+        // Find blogs associated with the user based on writter name of such blog
         const userBlogs = await blogsCollection
-          .find({ bloggerName: user.username })
+          .find({ username: user.Writter })
           .toArray();
 
         return {
@@ -295,6 +314,7 @@ export const searchUsersWithBlogs = async (req, res) => {
             _id: user._id,
             username: user.username,
           },
+          Count: userBlogs.length,
           blogs: userBlogs,
         };
       })
@@ -303,7 +323,7 @@ export const searchUsersWithBlogs = async (req, res) => {
     // Return the search results with user details and associated blogs
     res.status(200).json({
       message: "Users found matching the search query with their blogs.",
-      users: usersWithBlogs,
+      user: usersWithBlogs,
     });
   } catch (error) {
     console.error("Error searching for users with blogs:", error);
@@ -311,7 +331,7 @@ export const searchUsersWithBlogs = async (req, res) => {
   }
 };
 
-// Update user by ID
+//___________________Update user by ID___________________________/
 export const updateUserById = async (req, res) => {
   const id = `${req.params.id}`;
   const userUpdatedData = { ...req.body };
@@ -320,37 +340,57 @@ export const updateUserById = async (req, res) => {
     const usersCollection = getCollection("users");
 
     if (!ObjectId.isValid(id)) {
-      return res.status(400).json({ error: "Invalid ObjectId." });
+      return res.status(400).json({ error: "Invalid UserId." });
+    }
+    const authToken = req.headers.authorization;
+
+    let token = null;
+
+    if (authToken && authToken.startsWith("Bearer ")) {
+      token = authToken.split(" ")[1];
     }
 
-    if (userUpdatedData.password) {
-      // If the password is being updated, hash it
-      userUpdatedData.password = await hashPassword(userUpdatedData.password);
+    if (token) {
+      const decodedToken = verifyAuthToken(token);
+
+      // Ensure that the user is updating their own profile
+      if (decodedToken.input._id !== id) {
+        return res
+          .status(403)
+          .json({ error: "You do not have permission to update this user." });
+      }
+
+      if (userUpdatedData.password) {
+        // If the password is being updated, hash it
+        userUpdatedData.password = await hashInputData(
+          userUpdatedData.password
+        );
+      }
+
+      const updatedUser = await usersCollection.findOneAndUpdate(
+        { _id: new ObjectId(id) },
+        { $set: userUpdatedData },
+        { returnDocument: "after" }
+      );
+
+      if (updatedUser === null) {
+        return res.status(404).json({ error: "User not found." });
+      }
+
+      res.status(200).json({
+        message: "User updated successfully.",
+        user: {
+          updatedUser,
+        },
+      });
     }
-
-    const updatedUser = await usersCollection.findOneAndUpdate(
-      { _id: new ObjectId(id) },
-      { $set: userUpdatedData },
-      { returnDocument: "after" }
-    );
-
-    if (updatedUser === null) {
-      return res.status(404).json({ error: "User not found." });
-    }
-
-    res.status(200).json({
-      message: "User updated successfully.",
-      user: {
-        updatedUser,
-      },
-    });
   } catch (error) {
     console.error("Error updating a user:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
-// Delete user by ID
+//______________ Delete user by ID or User deleting their own account______________/
 export const deleteUserById = async (req, res) => {
   const id = `${req.params.id}`;
 
@@ -358,16 +398,38 @@ export const deleteUserById = async (req, res) => {
     const usersCollection = getCollection("users");
 
     if (!ObjectId.isValid(id)) {
-      return res.status(400).json({ error: "Invalid ObjectId." });
+      return res.status(400).json({ error: "Invalid UserId." });
     }
 
-    const result = await usersCollection.deleteOne({ _id: new ObjectId(id) });
+    const authToken = req.headers.authorization;
 
-    if (result.deletedCount === 0) {
-      return res.status(404).json({ error: "User not found." });
+    let token = null;
+
+    if (authToken && authToken.startsWith("Bearer ")) {
+      token = authToken.split(" ")[1];
     }
 
-    res.status(204).send();
+    if (token) {
+      const decodedToken = verifyAuthToken(token);
+      if (
+        decodedToken.input._id !== id ||
+        decodedToken.input.role !== "admin"
+      ) {
+        return res
+          .status(403)
+          .json({ error: "You do not have permission to delete this user." });
+      } else {
+        const result = await usersCollection.deleteOne({
+          _id: new ObjectId(id),
+        });
+
+        if (result.deletedCount === 0) {
+          return res.status(404).json({ error: "User not found." });
+        }
+
+        res.status(204).send();
+      }
+    }
   } catch (error) {
     console.error("Error deleting a user:", error);
     res.status(500).json({ error: "Internal Server Error" });
@@ -385,6 +447,7 @@ export const followUser = async (req, res) => {
     const usersCollection = getCollection("users");
 
     // Update the followed blogger's document to increment followers count and add follower's info
+
     const result = await usersCollection.findOneAndUpdate(
       { _id: new ObjectId(followedUserId) },
       {
@@ -399,8 +462,25 @@ export const followUser = async (req, res) => {
       },
       { returnDocument: "after" }
     );
+    // update the following person Document with following number
+    const result1 = await usersCollection.findOneAndUpdate(
+      { _id: new ObjectId(currentUserId) },
+      {
+        $inc: { followingCount: 1 },
+        $push: {
+          following: {
+            userId: followedUserId,
+            username: req.user.username,
+            email: req.user.email,
+          },
+        },
+      },
+      { returnDocument: "after" }
+    );
 
     if (!result.value) {
+      return res.status(404).json({ error: "Blogger not found." });
+    } else if (!result1.value) {
       return res.status(404).json({ error: "Blogger not found." });
     }
 
@@ -433,12 +513,28 @@ export const unfollowUser = async (req, res) => {
       },
       { returnDocument: "after" }
     );
+    // update the following person Document with following number
+    const result1 = await usersCollection.findOneAndUpdate(
+      { _id: new ObjectId(currentUserId) },
+      {
+        $inc: { followingCount: -1 },
+        $pull: {
+          following: { userId: currentUserId },
+        },
+      },
+      { returnDocument: "after" }
+    );
 
     if (!result.value) {
-      return res.status(404).json({ error: "Blogger not found." });
+      return res
+        .status(404)
+        .json({ error: "Blogger not found to be followed." });
+    } else if (!result1.value) {
+      return res
+        .status(404)
+        .json({ error: "You can't unfollow the person you are not following" });
     }
 
-    // Return a success response
     res.status(200).json({
       message: "User unfollowed successfully.",
     });
@@ -448,12 +544,35 @@ export const unfollowUser = async (req, res) => {
   }
 };
 //______________ Report content____________________/
+
 export const reportContent = async (req, res) => {
   try {
     const { blogId, bloggerId, reason } = req.body;
-
-    // Implement your logic to store the content report in the admin_reported-content document
+    const usersCollection = getCollection("users");
+    const blogsCollection = getCollection("blogs");
     const reportedCollection = getCollection("reportedContent");
+
+    // Check if the user exists
+    const user = await usersCollection.findOne({ _id: req.user._id });
+    if (!user) {
+      return res.status(404).json({ error: "User not found." });
+    }
+
+    // Check if the blog with the specified ID exists
+    const blog = await blogsCollection.findOne({ _id: blogId });
+    if (!blog) {
+      return res.status(404).json({ error: "Blog not found." });
+    }
+
+    // Check if the user's token is valid and not expired
+    const tokenIsValid = verifyAuthToken(req.user.token);
+    if (!tokenIsValid) {
+      return res
+        .status(403)
+        .json({ error: "Invalid token or token has expired." });
+    }
+
+    // Check user authorization if necessary
 
     const reportData = {
       blogId,
@@ -469,7 +588,7 @@ export const reportContent = async (req, res) => {
     // Return a success response
     res.status(201).json({
       message: "Content reported successfully.",
-      repotedBlog: result,
+      reportedBlog: result,
     });
   } catch (error) {
     console.error("Error reporting content:", error);

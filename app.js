@@ -6,51 +6,44 @@ import blogsRoutes from "./Routes/blogsRoutes.js";
 import usersRoutes from "./Routes/usersRoutes.js";
 import swaggerOptions from "./Documentation/swagger.js";
 import { connectDatabase } from "./database.js";
-import getCollection from "./database.js"; 
+import cors from "cors";
+import compression from "compression";
+import helmet from "helmet";
 
 const app = express();
 app.use(morgan("dev"));
-
-// Connect to the database
 connectDatabase();
 
 // Middleware setup
-app.use((req, res, next) => {
-  req.blogsCollection = getCollection("blogs");
-  next();
-});
+
+app.use(cors());
+app.use(helmet());
+app.use(compression());
 app.use(express.json());
-app.use((req, res, next) => {
-  req.commentsCollection = getCollection("comments");
-  next();
-});
+app.use(express.urlencoded({ extended: true }));
 
-app.use((req, res, next) => {
-  req.messagesCollection = getCollection("messages");
-  next();
-});
-
-app.use((req, res, next) => {
-  req.usersCollection = getCollection("users");
-  next();
-});
+//routes configuration
+app.use("/api/v1/ped/", blogsRoutes);
+app.use("/api/v1/ped/", usersRoutes);
 
 // Swagger documentation setup
 const swaggerDocs = swaggerJSDoc(swaggerOptions);
-app.use(
-  "/api-docs",
-  swaggerUI.serve,
-  swaggerUI.setup(swaggerDocs)
-);
+app.use("/api-docs", swaggerUI.serve, swaggerUI.setup(swaggerDocs));
 
-// Route setup
-app.use("/api/v1/ped", blogsRoutes);
-app.use("/api", usersRoutes);
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error("Error:", err);
+  res.status(err.status || 500).json({ error: err.message });
+});
+
 
 // Default route
-app.use((req, res, next) => {
+app.use((req, res) => {
   if (req.path === "/") {
     res.send("<h1>Welcome to the PublishEveryDay Backend repository!<h1> ");
+  } else {
+    res.status(404).json({ error: "Not Found" });
   }
 });
 
