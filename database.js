@@ -14,7 +14,9 @@ const collections = {
   admins: "admins",
 };
 
-const client = new MongoClient(uri);
+const client = new MongoClient(uri,{useNewUrlParser: true,
+  useUnifiedTopology: true,
+  ssl: true, });
 
 async function connectDatabase() {
   try {
