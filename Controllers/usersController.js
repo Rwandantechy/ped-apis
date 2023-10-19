@@ -1,20 +1,23 @@
-import { getCollection } from "../database.js";
-import { generateAuthToken, verifyAuthToken } from "../Middlewares/jwtAuth.js";
-import { hashInputData } from "../Middlewares/hashInputData.js";
-import { transporter } from "../Middlewares/nodemailerFunction.js";
-import { ObjectId } from "mongodb";
-import fs from "fs/promises";
-import bcrypt from "bcrypt";
-import ejs from "ejs";
-import path from "path";
-import { dirname } from "path";
-import { fileURLToPath } from "url";
-import { v4 as uuidv4 } from "uuid";
-import { get } from "http";
+const { getCollection } = require("../database.js");
+const {
+  generateAuthToken,
+  verifyAuthToken,
+} = require("../Middlewares/jwtAuth.js");
+const { hashInputData } = require("../Middlewares/hashInputData.js");
+const { transporter } = require("../Middlewares/nodemailerFunction.js");
+const { ObjectId } = require("mongodb");
+const fs = require("fs").promises;
+const bcrypt = require("bcrypt");
+const ejs = require("ejs");
+const path = require("path");
+const { dirname } = require("path");
+const { fileURLToPath } = require("url");
+const { v4: uuidv4 } = require("uuid");
+const { get } = require("http");
 
 //_________________ Get all users____________________/
 
-export const createUser = async (req, res) => {
+const createUser = async (req, res) => {
   try {
     const usersCollection = getCollection("users");
     const userVerificationsCollection = getCollection("userVerifications");
@@ -61,7 +64,6 @@ export const createUser = async (req, res) => {
     // Send the verification email with the EJS template
     const verificationLink = `${currentUrl}api/v1/ped/verify/${id}/${verificationToken}`;
 
-    const __dirname = dirname(fileURLToPath(import.meta.url));
     const emailTemplatePath = path.join(
       __dirname,
       "../Views/emailVerification.ejs"
@@ -99,7 +101,7 @@ export const createUser = async (req, res) => {
 };
 
 //______________________ verifying user through sent email______________________________/
-export const verifyUser = async (req, res) => {
+const verifyUser = async (req, res) => {
   try {
     const sentUserId = req.params.sentUserId;
     const verificationToken = req.params.token;
@@ -160,26 +162,23 @@ export const verifyUser = async (req, res) => {
 };
 
 //_____________confirm email verification____________________/
-export async function userEmailVerified(req, res) {
+const userEmailVerified = async (req, res) => {
   try {
-    const __dirname = dirname(fileURLToPath(import.meta.url));
-    const emailTemplatePath = path.join(
-      __dirname,
-      "../Views/confirmVerification.html"
-    );
+    const __dirname = path.dirname(__filename); 
+    const emailTemplatePath = path.join(__dirname, '../Views/confirmVerification.html');
 
     res.sendFile(emailTemplatePath);
-  } catch (error) {
+} catch (error) {
     console.error(
       "Error giving the feedback after  clicking verification link:",
       error
     );
     res.status(500).json({ error: "Internal Server Error" });
   }
-}
+};
 
 //_______________ Login as a user_______________/
-export const loginUser = async (req, res) => {
+const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
     const usersCollection = getCollection("users");
@@ -216,7 +215,7 @@ export const loginUser = async (req, res) => {
   }
 };
 // ___________________Get your own profile_______________________/
-export const getUserById = async (req, res) => {
+const getUserById = async (req, res) => {
   try {
     const userId = `${req.params.id}`;
     const usersCollection = getCollection("users");
@@ -281,7 +280,7 @@ export const getUserById = async (req, res) => {
 };
 
 //________________ Search for users by username or email and retrieve their blogs______/
-export const searchUsersWithBlogs = async (req, res) => {
+const searchUsersWithBlogs = async (req, res) => {
   try {
     const query = req.query.q;
     const usersCollection = getCollection("users");
@@ -332,7 +331,7 @@ export const searchUsersWithBlogs = async (req, res) => {
 };
 
 //___________________Update user by ID___________________________/
-export const updateUserById = async (req, res) => {
+const updateUserById = async (req, res) => {
   const id = `${req.params.id}`;
   const userUpdatedData = { ...req.body };
 
@@ -391,7 +390,7 @@ export const updateUserById = async (req, res) => {
 };
 
 //______________ Delete user by ID or User deleting their own account______________/
-export const deleteUserById = async (req, res) => {
+const deleteUserById = async (req, res) => {
   const id = `${req.params.id}`;
 
   try {
@@ -437,7 +436,7 @@ export const deleteUserById = async (req, res) => {
 };
 
 // ________________Follow a user (blogger)______________/
-export const followUser = async (req, res) => {
+const followUser = async (req, res) => {
   try {
     // The user performing the follow
     const currentUserId = req.params.userId;
@@ -495,7 +494,7 @@ export const followUser = async (req, res) => {
 };
 
 //________________ Unfollow a user (blogger)______________/
-export const unfollowUser = async (req, res) => {
+const unfollowUser = async (req, res) => {
   try {
     const currentUserId = req.params.userId;
     const unfollowedUserId = req.body.unfollowedUserId;
@@ -545,7 +544,7 @@ export const unfollowUser = async (req, res) => {
 };
 //______________ Report content____________________/
 
-export const reportContent = async (req, res) => {
+const reportContent = async (req, res) => {
   try {
     const { blogId, bloggerId, reason } = req.body;
     const usersCollection = getCollection("users");
@@ -594,4 +593,18 @@ export const reportContent = async (req, res) => {
     console.error("Error reporting content:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
+};
+
+module.exports = {
+  createUser,
+  verifyUser,
+  userEmailVerified,
+  loginUser,
+  getUserById,
+  searchUsersWithBlogs,
+  updateUserById,
+  deleteUserById,
+  followUser,
+  unfollowUser,
+  reportContent,
 };

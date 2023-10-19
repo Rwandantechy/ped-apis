@@ -3,9 +3,8 @@
   "version": "1.0.0",
   "description": "Empowering bloggers and content creators with Project PublishEveryDay's backend. Seamlessly facilitate content creation, scheduling, and engagement functionalities. Harness the power of Node.js, Express.js, and MongoDB in the MERN Stack to revolutionize content sharing and engagement. Join us in reshaping the digital landscape.",
   "main": "server.js",
-  "type": "module",
   "scripts": {
-    "start": "nodemon --experimental-modules --es-module-specifier-resolution=node --no-warnings server.js",
+    "start": "nodemon server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -44,6 +43,7 @@
   "dependencies": {
     "@superfaceai/passport-twitter-oauth2": "^1.2.3",
     "bcrypt": "^5.1.1",
+    "bcryptjs": "^2.4.3",
     "compression": "^1.7.4",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
@@ -68,6 +68,7 @@
     "passport-twitter": "^0.1.5",
     "path": "^0.12.7",
     "prettier": "^3.0.3",
+    "process": "^0.11.10",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.0",
     "uuid": "^9.0.1"

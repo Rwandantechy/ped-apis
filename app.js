@@ -1,14 +1,15 @@
-import express from "express";
-import swaggerJSDoc from "swagger-jsdoc";
-import morgan from "morgan";
-import swaggerUI from "swagger-ui-express";
-import blogsRoutes from "./Routes/blogsRoutes.js";
-import usersRoutes from "./Routes/usersRoutes.js";
-import swaggerOptions from "./Documentation/swagger.js";
-import { connectDatabase } from "./database.js";
-import cors from "cors";
-import compression from "compression";
-import helmet from "helmet";
+const express = require("express");
+const swaggerJSDoc = require("swagger-jsdoc");
+const morgan = require("morgan");
+const swaggerUI = require("swagger-ui-express");
+const blogsRoutes = require("./Routes/blogsRoutes.js");
+const usersRoutes = require("./Routes/usersRoutes.js");
+const swaggerOptions = require("./Documentation/swagger.js");
+const { connectDatabase } = require("./database.js");
+const cors = require("cors");
+const compression = require("compression");
+const helmet = require("helmet");
+
 
 const app = express();
 app.use(morgan("dev"));
@@ -47,4 +48,5 @@ app.use((req, res) => {
   }
 });
 
-export default app;
+module.exports = app;
+

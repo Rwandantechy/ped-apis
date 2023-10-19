@@ -1,7 +1,8 @@
-import express from "express";
+const express = require("express");
+const upload = require("../multerConfig.js");
+const blogsController = require("../Controllers/blogsController");
 
-import upload from "../multerConfig.js";
-import {
+const {
   createBlog,
   getAllBlogs,
   getBlogById,
@@ -10,8 +11,7 @@ import {
   getAllBlogsPaginated,
   getTopBlogs,
   getBlogsByOwner,
-  
-} from "../Controllers/blogsController.js";
+} = blogsController;
 
 const router = express.Router();
 
@@ -38,4 +38,4 @@ router.get("/top-blogs", getTopBlogs);
 // New route to get blogs by owner
 router.get("/blogs/by-owner/:ownerId", getBlogsByOwner);
 
-export default router;
+module.exports = router;

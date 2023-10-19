@@ -1,14 +1,14 @@
-import { getCollection } from "../database.js";
-import { ObjectId } from "mongodb";
-import fs from "fs";
+const { getCollection } = require("../database.js");
+const { ObjectId } = require("mongodb");
+const fs = require("fs");
 
 //__________ Create a new blog ___________/
-export const createBlog = async (req, res) => {
+const createBlog = async (req,res) => {
   try {
     const blogsCollection = getCollection("blogs");
     const blogData = req.body;
     const file = req.file;
-    if (file) {      
+    if (file) {
       blogData.image = file.path;
     }
 
@@ -37,7 +37,7 @@ export const createBlog = async (req, res) => {
 };
 
 //__________ Get all blogs/any content type___________/
-export const getAllBlogs = async (req, res) => {
+const getAllBlogs = async (req, res) => {
   try {
     const blogsCollection = getCollection("blogs");
     const blogs = await blogsCollection.find({}).toArray();
@@ -61,7 +61,7 @@ export const getAllBlogs = async (req, res) => {
 };
 
 //_________ Get a single blog by ID___________/
-export const getBlogById = async (req, res) => {
+const getBlogById = async (req, res) => {
   try {
     const id = `${req.params.id}`;
     if (!id) {
@@ -98,7 +98,7 @@ export const getBlogById = async (req, res) => {
   }
 };
 //____________ Update an existing blog_____________/
-export const updateBlog = async (req, res) => {
+const updateBlog = async (req, res) => {
   const id = `${req.params.id}`;
   const blogUpdatedData = {};
   const file = req.file;
@@ -163,7 +163,7 @@ export const updateBlog = async (req, res) => {
 };
 
 //______________ Delete a blog by ID_____________/
-export const deleteBlog = async (req, res) => {
+const deleteBlog = async (req, res) => {
   const id = `${req.params.id}`;
 
   try {
@@ -199,7 +199,7 @@ export const deleteBlog = async (req, res) => {
 };
 
 //__________ Get all blogs/any content type with pagination___________/
-export const getAllBlogsPaginated = async (req, res) => {
+const getAllBlogsPaginated = async (req, res) => {
   try {
     const blogsCollection = getCollection("blogs");
     const page = parseInt(req.query.page) || 1;
@@ -232,7 +232,7 @@ export const getAllBlogsPaginated = async (req, res) => {
 };
 
 //__________Get the top 10 blogs with most likes and comments___________/
-export const getTopBlogs = async (req, res) => {
+const getTopBlogs = async (req, res) => {
   try {
     const blogsCollection = getCollection("blogs");
 
@@ -258,7 +258,7 @@ export const getTopBlogs = async (req, res) => {
 };
 
 //_______Get blogs by owner or admin with optional pagination_______/
-export const getBlogsByOwner = async (req, res) => {
+const getBlogsByOwner = async (req, res) => {
   try {
     const userId = req.params.userId;
 
@@ -266,7 +266,6 @@ export const getBlogsByOwner = async (req, res) => {
 
     // check if the user  is an admin(privilleged user)
     async function checkAdminById(userId) {
-      
       const adminsCollection = getCollection("admins");
       const admin = await adminsCollection.findOne({ userId: userId });
 
@@ -278,7 +277,6 @@ export const getBlogsByOwner = async (req, res) => {
       ownerId: userId,
     });
 
-   
     const isAdmin = await checkAdminById(userId);
 
     if (userBlogsCount === 0 && !isAdmin) {
@@ -328,4 +326,15 @@ export const getBlogsByOwner = async (req, res) => {
     console.error("Error fetching owner's blogs:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
+};
+
+module.exports = {
+  createBlog,
+  getAllBlogs,
+  getBlogById,
+  updateBlog,
+  deleteBlog,
+  getAllBlogsPaginated,
+  getTopBlogs,
+  getBlogsByOwner,
 };
