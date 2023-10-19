@@ -1,5 +1,7 @@
 # PublishEveryDay Backend
-Welcome to the PublishEveryDay Backend repository! This repository contains the backend code for the PublishEveryDay Blogging Platform, a web application aimed at empowering bloggers and content creators.
+Welcome to the PublishEveryDay Backend repository!
+ This repository contains the backend code for the PublishEveryDay Blogging Platform,
+ a web application aimed at empowering bloggers and content creators.
 
 ## Table of Contents
 
@@ -18,14 +20,15 @@ PublishEveryDay (PED) is a web-based application that provides an easy-to-use en
 
 ## Features
 
-- User authentication and authorization
+- User authentication and authorization 
 - Content creation and scheduling
 - Media integration (images, videos)
 - Categories and tags for content organization
-- User engagement features (comments, likes, sharing)
+- User engagement features (comments, likes, sharing,follow, claping, reporting)
 - SEO optimization for better visibility
 - Analytics dashboard for insights
 - Support for monetization strategies
+- sanity checking using automated machine learning model(Bot).
 
 ## Getting Started
 

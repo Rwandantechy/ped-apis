@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Email Verification</title>
+  </head>
+  <body>
+    <style>
+      body {
+        font-family: "Arial", sans-serif;
+        background-color: green;
+        text-align: center;
+        margin: 0;
+        padding: 0;
+      }
+
+      h1 {
+        color: #333;
+        font-size: 36px;
+        margin-top: 100px;
+      }
+
+      p {
+        font-size: 20px;
+        margin-top: 20px;
+      }
+
+      a {
+        text-decoration: none;
+        color: #007bff;
+        font-weight: bold;
+        transition: color 0.3s ease;
+      }
+
+      a:hover {
+        color: #0056b3;
+      }
+    </style>
+    <h1>Email Verification</h1>
+    <p>Please click the following link to verify your email address:</p>
+    <strong>This link will expire just in 24 hours </strong> <br /><br />
+    <a href="<%= verificationLink %>">Click Right here </a>
+    or use this link
+    <a href="<%= verificationLink %>"> <%= verificationLink %></a>
+  </body>
+</html>
